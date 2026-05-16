@@ -190,8 +190,11 @@
     const backBtn = document.getElementById("nav-back");
     backBtn.disabled = currentIndex === 0;
 
+    const isLast = currentIndex === TOTAL - 1;
     const forwardBtn = document.getElementById("nav-forward");
-    forwardBtn.disabled = currentIndex >= TOTAL - 1;
+    const finishBtn = document.getElementById("nav-finish");
+    forwardBtn.style.display = isLast ? "none" : "";
+    finishBtn.style.display = isLast ? "" : "none";
   }
 
   function onSelectOption(optionIndex) {
