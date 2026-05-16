@@ -191,16 +191,7 @@
     backBtn.disabled = currentIndex === 0;
 
     const forwardBtn = document.getElementById("nav-forward");
-    const isLast = currentIndex === TOTAL - 1;
-    forwardBtn.textContent = isLast ? "Завершить" : "Вперёд →";
-    forwardBtn.classList.toggle("btn-primary", isLast);
-    // Allow free navigation back/forward; only "Завершить" requires all answered.
-    if (isLast) {
-      const allAnswered = questions.every((qq) => qq.selected !== null);
-      forwardBtn.disabled = !allAnswered;
-    } else {
-      forwardBtn.disabled = false;
-    }
+    forwardBtn.disabled = currentIndex >= TOTAL - 1;
   }
 
   function onSelectOption(optionIndex) {
@@ -223,11 +214,22 @@
     if (currentIndex < TOTAL - 1) {
       currentIndex += 1;
       renderQuestion();
-    } else {
-      // Last question, "Завершить"
-      const allAnswered = questions.every((q) => q.selected !== null);
-      if (allAnswered) finishQuiz();
     }
+  }
+
+  function tryFinish() {
+    const answered = questions.filter((q) => q.selected !== null).length;
+    if (answered < TOTAL) {
+      const ok = window.confirm(
+        "Вы ответили на " +
+          answered +
+          " из " +
+          TOTAL +
+          " вопросов. Завершить тест? Неотвеченные засчитаются как неверные."
+      );
+      if (!ok) return;
+    }
+    finishQuiz();
   }
 
   // ---------------------------------------------------------------
@@ -381,6 +383,9 @@
     document
       .getElementById("nav-forward")
       .addEventListener("click", goForward);
+    document
+      .getElementById("nav-finish")
+      .addEventListener("click", tryFinish);
 
     document
       .getElementById("btn-restart")
