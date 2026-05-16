@@ -29,6 +29,30 @@
     return "images/" + encodeURIComponent(phrase) + ".png";
   }
 
+  // ---------------------------------------------------------------
+  // Image preloading
+  // ---------------------------------------------------------------
+  // Decoded <img> elements are cached in the browser. Re-using a cached
+  // element (or its URL) skips the network + decode delay on each
+  // question render.
+  const preloaded = new Map();
+
+  function preloadAll() {
+    PHRASES.forEach((phrase) => {
+      if (preloaded.has(phrase)) return;
+      const img = new Image();
+      img.decoding = "async";
+      img.src = imageUrl(phrase);
+      // Try a full decode in the background so the image is paint-ready.
+      if (img.decode) {
+        img.decode().catch(() => {
+          /* ignore — fallback to lazy decode on first render */
+        });
+      }
+      preloaded.set(phrase, img);
+    });
+  }
+
   function scoreFor(timeMs, correct) {
     if (!correct) return 0;
     const t = timeMs / 1000;
@@ -137,7 +161,14 @@
 
     const img = document.getElementById("quiz-image");
     const phrase = PHRASES[q.correctIndex];
-    img.src = imageUrl(phrase);
+    const cached = preloaded.get(phrase);
+    if (cached && cached.complete && cached.naturalWidth > 0) {
+      // Reuse the already-decoded preloaded element's src so the
+      // browser pulls straight from cache without a flash.
+      img.src = cached.src;
+    } else {
+      img.src = imageUrl(phrase);
+    }
     img.alt = "";
 
     const optionsContainer = document.getElementById("quiz-options");
@@ -329,6 +360,8 @@
   // ---------------------------------------------------------------
 
   function init() {
+    preloadAll();
+
     document
       .getElementById("btn-start")
       .addEventListener("click", startQuiz);
