@@ -2,9 +2,20 @@
 (function () {
   "use strict";
 
-  const PHRASES = window.PHRASES || [];
-  const TOTAL = PHRASES.length;
+  /** @type {Array<{file:string,label:string}>} */
+  const MEMES = window.MEMES || [];
+  const POOL_SIZE = MEMES.length;
+  const QUESTIONS_PER_GAME = Math.min(50, POOL_SIZE);
   const STORAGE_KEY = "ege_melstroy_history_v1";
+
+  // All distinct answer labels. Memes that share a label (e.g. files
+  // "аааааа.png" and "аааааа2.png") collapse onto a single label, so we
+  // never end up with two duplicate options inside the same question.
+  const ALL_LABELS = (function () {
+    const set = new Set();
+    MEMES.forEach((m) => set.add(m.label));
+    return Array.from(set);
+  })();
 
   // ---------------------------------------------------------------
   // Utility helpers
@@ -19,14 +30,13 @@
     return a;
   }
 
-  function pickRandomOthers(correctIndex, n) {
-    const pool = [];
-    for (let i = 0; i < TOTAL; i++) if (i !== correctIndex) pool.push(i);
+  function pickDistractorLabels(correctLabel, n) {
+    const pool = ALL_LABELS.filter((lbl) => lbl !== correctLabel);
     return shuffle(pool).slice(0, n);
   }
 
-  function imageUrl(phrase) {
-    return "images/" + encodeURIComponent(phrase) + ".png";
+  function imageUrl(file) {
+    return "images/" + encodeURIComponent(file) + ".png";
   }
 
   // ---------------------------------------------------------------
@@ -38,18 +48,17 @@
   const preloaded = new Map();
 
   function preloadAll() {
-    PHRASES.forEach((phrase) => {
-      if (preloaded.has(phrase)) return;
+    MEMES.forEach((m) => {
+      if (preloaded.has(m.file)) return;
       const img = new Image();
       img.decoding = "async";
-      img.src = imageUrl(phrase);
-      // Try a full decode in the background so the image is paint-ready.
+      img.src = imageUrl(m.file);
       if (img.decode) {
         img.decode().catch(() => {
           /* ignore — fallback to lazy decode on first render */
         });
       }
-      preloaded.set(phrase, img);
+      preloaded.set(m.file, img);
     });
   }
 
@@ -100,7 +109,17 @@
   // State
   // ---------------------------------------------------------------
 
-  /** @type {Array<{ correctIndex:number, options:number[], correctOptionIndex:number, selected:number|null, timeMs:number|null, firstShownAt:number|null }>} */
+  /**
+   * @type {Array<{
+   *   memeIndex:number,
+   *   correctLabel:string,
+   *   options:string[],
+   *   correctOptionIndex:number,
+   *   selected:number|null,
+   *   timeMs:number|null,
+   *   firstShownAt:number|null,
+   * }>}
+   */
   let questions = [];
   let currentIndex = 0;
 
@@ -127,14 +146,19 @@
   // ---------------------------------------------------------------
 
   function buildQuiz() {
-    const order = shuffle(Array.from({ length: TOTAL }, (_, i) => i));
-    questions = order.map((correctIndex) => {
-      const wrongs = pickRandomOthers(correctIndex, 3);
-      const optionsIdx = shuffle([correctIndex, ...wrongs]);
-      const correctOptionIndex = optionsIdx.indexOf(correctIndex);
+    // Pick QUESTIONS_PER_GAME random memes from the full pool.
+    const allIndices = Array.from({ length: POOL_SIZE }, (_, i) => i);
+    const chosen = shuffle(allIndices).slice(0, QUESTIONS_PER_GAME);
+
+    questions = chosen.map((memeIndex) => {
+      const correctLabel = MEMES[memeIndex].label;
+      const distractors = pickDistractorLabels(correctLabel, 3);
+      const options = shuffle([correctLabel, ...distractors]);
+      const correctOptionIndex = options.indexOf(correctLabel);
       return {
-        correctIndex,
-        options: optionsIdx,
+        memeIndex,
+        correctLabel,
+        options,
         correctOptionIndex,
         selected: null,
         timeMs: null,
@@ -152,33 +176,36 @@
 
   function renderQuestion() {
     const q = questions[currentIndex];
+    const meme = MEMES[q.memeIndex];
 
-    document.getElementById("quiz-current").textContent = String(currentIndex + 1);
-    document.getElementById("quiz-total").textContent = String(TOTAL);
+    document.getElementById("quiz-current").textContent = String(
+      currentIndex + 1
+    );
+    document.getElementById("quiz-total").textContent = String(
+      QUESTIONS_PER_GAME
+    );
 
     const progressFill = document.getElementById("progress-fill");
-    progressFill.style.width = ((currentIndex + 1) / TOTAL) * 100 + "%";
+    progressFill.style.width =
+      ((currentIndex + 1) / QUESTIONS_PER_GAME) * 100 + "%";
 
     const img = document.getElementById("quiz-image");
-    const phrase = PHRASES[q.correctIndex];
-    const cached = preloaded.get(phrase);
+    const cached = preloaded.get(meme.file);
     if (cached && cached.complete && cached.naturalWidth > 0) {
-      // Reuse the already-decoded preloaded element's src so the
-      // browser pulls straight from cache without a flash.
       img.src = cached.src;
     } else {
-      img.src = imageUrl(phrase);
+      img.src = imageUrl(meme.file);
     }
     img.alt = "";
 
     const optionsContainer = document.getElementById("quiz-options");
     optionsContainer.innerHTML = "";
-    q.options.forEach((phraseIdx, i) => {
+    q.options.forEach((label, i) => {
       const btn = document.createElement("button");
       btn.className = "option";
       if (q.selected === i) btn.classList.add("selected");
       btn.type = "button";
-      btn.textContent = PHRASES[phraseIdx];
+      btn.textContent = label;
       btn.addEventListener("click", () => onSelectOption(i));
       optionsContainer.appendChild(btn);
     });
@@ -190,7 +217,7 @@
     const backBtn = document.getElementById("nav-back");
     backBtn.disabled = currentIndex === 0;
 
-    const isLast = currentIndex === TOTAL - 1;
+    const isLast = currentIndex === QUESTIONS_PER_GAME - 1;
     const forwardBtn = document.getElementById("nav-forward");
     const finishBtn = document.getElementById("nav-finish");
     forwardBtn.style.display = isLast ? "none" : "";
@@ -214,7 +241,7 @@
   }
 
   function goForward() {
-    if (currentIndex < TOTAL - 1) {
+    if (currentIndex < QUESTIONS_PER_GAME - 1) {
       currentIndex += 1;
       renderQuestion();
     }
@@ -222,12 +249,12 @@
 
   function tryFinish() {
     const answered = questions.filter((q) => q.selected !== null).length;
-    if (answered < TOTAL) {
+    if (answered < QUESTIONS_PER_GAME) {
       const ok = window.confirm(
         "Вы ответили на " +
           answered +
           " из " +
-          TOTAL +
+          QUESTIONS_PER_GAME +
           " вопросов. Завершить тест? Неотвеченные засчитаются как неверные."
       );
       if (!ok) return;
@@ -241,11 +268,13 @@
 
   function buildResultEntry() {
     const detailed = questions.map((q) => {
-      const correct = q.selected === q.correctOptionIndex;
+      const selectedLabel =
+        q.selected != null ? q.options[q.selected] : null;
+      const correct = selectedLabel === q.correctLabel;
       const pts = scoreFor(q.timeMs == null ? 999999 : q.timeMs, correct);
       return {
-        correctIndex: q.correctIndex,
-        selectedPhraseIndex: q.selected != null ? q.options[q.selected] : null,
+        correctLabel: q.correctLabel,
+        selectedLabel,
         correct,
         timeMs: q.timeMs,
         points: pts,
@@ -280,7 +309,7 @@
       const cell = document.createElement("div");
       cell.className = "score-cell " + (q.correct ? "correct" : "wrong");
       cell.textContent = String(i + 1);
-      cell.title = "Вопрос " + (i + 1) + ": " + PHRASES[q.correctIndex];
+      cell.title = "Вопрос " + (i + 1) + ": " + q.correctLabel;
       cell.addEventListener("click", () => showReview(i, result));
       grid.appendChild(cell);
     });
@@ -294,13 +323,13 @@
     card.style.display = "block";
     document.getElementById("review-q").textContent = "Вопрос " + (i + 1);
     document.getElementById("review-correct").textContent =
-      "Правильно: " + PHRASES[q.correctIndex];
+      "Правильно: " + q.correctLabel;
     const userEl = document.getElementById("review-user");
-    if (q.selectedPhraseIndex == null) {
+    if (q.selectedLabel == null) {
       userEl.textContent = "Ваш ответ: —";
       userEl.classList.add("wrong");
     } else {
-      userEl.textContent = "Ваш ответ: " + PHRASES[q.selectedPhraseIndex];
+      userEl.textContent = "Ваш ответ: " + q.selectedLabel;
       userEl.classList.toggle("wrong", !q.correct);
     }
   }
@@ -350,8 +379,8 @@
         const cell = document.createElement("div");
         cell.className = "history-cell" + (q.correct ? "" : " wrong");
         cell.textContent = String(i + 1);
-        cell.title =
-          "Вопрос " + (i + 1) + ": " + PHRASES[q.correctIndex];
+        const lbl = q.correctLabel != null ? q.correctLabel : "";
+        cell.title = "Вопрос " + (i + 1) + ": " + lbl;
         grid.appendChild(cell);
       });
       item.appendChild(grid);

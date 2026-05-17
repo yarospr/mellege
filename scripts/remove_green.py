@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Removes the green chroma-key background from every PNG in the repo root
-and writes transparent PNGs into docs/images/.
+and writes transparent PNGs into images/.
 
 Algorithm:
     - Read image as RGBA.
@@ -23,7 +23,7 @@ from PIL import Image
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SRC_DIR = REPO_ROOT
-OUT_DIR = REPO_ROOT / "docs" / "images"
+OUT_DIR = REPO_ROOT / "images"
 
 
 def remove_green(img: Image.Image) -> Image.Image:
