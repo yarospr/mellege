@@ -39,12 +39,21 @@ body {
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   min-height: 100%;
+  overflow: hidden;
+  touch-action: manipulation;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .app {
   max-width: 980px;
   margin: 0 auto;
   padding: 24px 20px 80px;
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ============================================================== */
@@ -64,6 +73,10 @@ body {
     box-shadow 0.2s ease;
   font-weight: 500;
   line-height: 1.2;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .btn:hover {
@@ -306,6 +319,10 @@ body {
   min-height: 64px;
   display: flex;
   align-items: center;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .option:hover {
