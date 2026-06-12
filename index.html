@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <title>ЕГЭ по Мелстрою</title>
+    <meta
+      name="description"
+      content="Сдай ЕГЭ по Мелстрою — угадай 50 фраз по картинкам."
+    />
+    <meta name="theme-color" content="#0b0f0a" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <!-- =================================================== -->
+      <!-- Menu                                                 -->
+      <!-- =================================================== -->
+      <section id="screen-menu" class="screen menu active">
+        <div class="menu-header">
+          <span class="brand">v1.0 · Мелстрой</span>
+          <button
+            id="btn-history"
+            class="btn btn-icon btn-ghost"
+            title="История игр"
+            aria-label="История игр"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="9"></circle>
+              <polyline points="12 7 12 12 15 14"></polyline>
+            </svg>
+          </button>
+        </div>
+
+        <h1>ЕГЭ по Мелстрою</h1>
+        <p class="subtitle">
+          50 картинок. 50 фраз. У тебя по 4 варианта на каждую — угадай, что сказал
+          легендарный Андрей. Чем быстрее отвечаешь, тем больше баллов.
+        </p>
+
+        <button id="btn-start" class="btn btn-primary start-btn">
+          Начать тест
+        </button>
+
+        <div class="rules">
+          <h3>Правила</h3>
+          <ul>
+            <li>В случайном порядке тебе покажут 50 картинок (без фона).</li>
+            <li>Под каждой — 4 варианта подписи. Один из них верный.</li>
+            <li>
+              Правильный ответ за ≤ 3&nbsp;секунд — <strong>2 балла</strong>.
+            </li>
+            <li>
+              Дольше — баллы постепенно уменьшаются, но не меньше
+              <strong>1&nbsp;балла</strong>.
+            </li>
+            <li>Неправильный ответ — <strong>0 баллов</strong>.</li>
+            <li>
+              Кнопки <em>«Назад»</em> и <em>«Вперёд»</em> позволяют свободно
+              перемещаться по вопросам.
+            </li>
+            <li>
+              Результат и таблицу правильных/неправильных ответов увидишь в самом
+              конце.
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- =================================================== -->
+      <!-- Quiz                                                 -->
+      <!-- =================================================== -->
+      <section id="screen-quiz" class="screen">
+        <div class="quiz-header">
+          <div class="quiz-progress">
+            Вопрос <strong id="quiz-current">1</strong> /
+            <span id="quiz-total">50</span>
+          </div>
+          <div class="brand">ЕГЭ по Мелстрою</div>
+        </div>
+
+        <div class="progress-bar">
+          <div id="progress-fill" class="progress-bar__fill"></div>
+        </div>
+
+        <div class="image-card">
+          <img id="quiz-image" alt="" />
+        </div>
+
+        <div id="quiz-options" class="options"></div>
+
+        <div class="quiz-nav">
+          <button id="nav-back" class="btn">← Назад</button>
+          <div class="nav-spacer"></div>
+          <button id="nav-forward" class="btn">Вперёд →</button>
+          <button
+            id="nav-finish"
+            class="btn btn-primary"
+            style="display: none"
+          >
+            Завершить тест
+          </button>
+        </div>
+      </section>
+
+      <!-- =================================================== -->
+      <!-- Results                                              -->
+      <!-- =================================================== -->
+      <section id="screen-results" class="screen">
+        <div class="results">
+          <h2>Твой результат</h2>
+          <div class="score-display">
+            <span id="score-value">0</span>
+            <span class="of">/ 100</span>
+          </div>
+          <div class="score-tag">Тест завершён</div>
+
+          <div id="score-grid" class="score-grid"></div>
+
+          <div id="review-card" class="review-card" style="display: none">
+            <div class="review-q" id="review-q">Вопрос</div>
+            <div class="review-correct" id="review-correct"></div>
+            <div class="review-user" id="review-user"></div>
+          </div>
+
+          <div class="results-actions">
+            <button id="btn-restart" class="btn btn-primary">
+              Пройти ещё раз
+            </button>
+            <button id="btn-to-menu" class="btn">В главное меню</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================== -->
+      <!-- History                                              -->
+      <!-- =================================================== -->
+      <section id="screen-history" class="screen">
+        <div class="history-header">
+          <h2>История игр</h2>
+          <button id="btn-history-back" class="btn">← Назад</button>
+        </div>
+
+        <div id="history-empty" class="history-empty">
+          <svg
+            width="48"
+            height="48"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="12" r="9"></circle>
+            <polyline points="12 7 12 12 15 14"></polyline>
+          </svg>
+          <div>Здесь пока пусто. Сыграй хотя бы один раз.</div>
+        </div>
+
+        <div id="history-list" class="history-list"></div>
+      </section>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
