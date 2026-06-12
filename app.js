@@ -5,7 +5,7 @@
   /** @type {Array<{file:string,label:string}>} */
   const MEMES = window.MEMES || [];
   const POOL_SIZE = MEMES.length;
-  const QUESTIONS_PER_GAME = Math.min(100, POOL_SIZE);
+  const QUESTIONS_PER_GAME = Math.min(50, POOL_SIZE);
   const STORAGE_KEY = "ege_melstroy_history_v1";
 
   // All distinct answer labels. Memes that share a label (e.g. files
